@@ -4,7 +4,7 @@ WARNING: In Development
 
 Tonuino Label Maker is a PyQt6 application designed for creating sticker labels for RFID cards. These cards are used with custom music players like Tonuino or ESPuino. The sticker labels are compatible e.g. with Herma 5028 label sheets. Edit the resources/template.json to support your custom label sheets.
 
-![ScreenShot](https://raw.github.com/gbbnq/tonuino-label-maker-pyqt6.git/main/screenshot.png)
+![ScreenShot](https://raw.githubusercontent.com/gbbnq/tonuino-label-maker-pyqt6/main/screenshot.png)
 
 ## Installation
 
