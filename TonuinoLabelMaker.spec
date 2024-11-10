@@ -4,7 +4,12 @@ a = Analysis(
     ['src\\main.py'],
     pathex=[],
     binaries=[],
-    datas=[('src/ui', 'ui'), ('src/resources/templates.json', 'resources')],
+    datas=[
+        ('src/ui', 'ui'),
+        ('src/resources/templates.json', 'resources'),
+        ('src/resources/espuino_logo.png', 'resources'),
+        ('src/resources/tonuino_logo.png', 'resources'),
+    ],
     hiddenimports=['PyQt6.QtPrintSupport', 'src.ui'],
     hookspath=[],
     hooksconfig={},

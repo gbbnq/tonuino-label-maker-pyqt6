@@ -33,9 +33,19 @@ class PreviewWidget(QWidget):
         self.setLayout(layout)
         
     def registerEditor(self, editor:ui.EditOptionsWidget):
+        """Register the editor widget
+
+        Args:
+            editor (ui.EditOptionsWidget): Instance of editor widget class
+        """
         self.editor = editor
         
     def registerLogger(self, logger:ui.FooterWidget):
+        """Register the logger widget
+
+        Args:
+            logger (ui.FooterWidget): Instance of logger widget class
+        """
         self.logger = logger
 
     def select_template(self, template_name:str) -> None:

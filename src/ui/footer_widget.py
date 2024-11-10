@@ -15,6 +15,12 @@ class FooterWidget(QWidget):
         layout.addWidget(self.log_window)
         self.setLayout(layout)
         
-    def log(self, message:str):
-        self.log_window.append(strftime("%Y-%m-%d %H:%M:%S", gmtime()) + " - " + message)
+    def log(self, message:str) -> None:
+        """Prints message to log widget
+
+        Args:
+            message (str): Message
+        """
+        if message:
+            self.log_window.append(strftime("%Y-%m-%d %H:%M:%S", gmtime()) + " - " + message)
         
