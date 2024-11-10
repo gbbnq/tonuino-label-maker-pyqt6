@@ -4,11 +4,10 @@ setlocal
 echo Cleaning venv build ...
 if exist .\venv\ rmdir /s /q .\venv\
 
-echo Creating virtual environment ...
-python -m venv venv
+echo Activating venv ...
+call venv\Scripts\activate
 
 echo Installing dependencies ...
 python -m pip install -r requirements.txt
 
-echo Activating venv
-call venv\Scripts\activate
+echo Virtual environment setup complete.
