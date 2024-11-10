@@ -5,7 +5,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
-        ('src/ui', 'ui'),
+        ('src/app', 'app'),
         ('src/resources/templates.json', 'resources'),
         ('src/resources/espuino_logo.png', 'resources'),
         ('src/resources/tonuino_logo.png', 'resources'),
