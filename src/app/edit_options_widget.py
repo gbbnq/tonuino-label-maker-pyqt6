@@ -287,12 +287,18 @@ class EditOptionsWidget(QWidget):
             original_image = self.label_data[(row, col)]['original']
                        
         # Scale the original image to fit the required height with aspect ratio
-        target_height = PREVIEW_HEIGHT
-        scale_factor = target_height / original_image.height
-        scaled_width = int(original_image.width * scale_factor)
-        
+        target_height = scaled_height = PREVIEW_HEIGHT
+        target_width = scaled_width = PREVIEW_WIDTH
+
+        if original_image.height / original_image.width > target_height / target_width:
+            scale_factor = target_height / original_image.height
+            scaled_width = int(original_image.width * scale_factor)
+        else:
+            scale_factor = target_width / original_image.width
+            scaled_height = int(original_image.height * scale_factor)
+
         # Convert scaled original image to QPixmap
-        scaled_image = original_image.resize((scaled_width, target_height), Image.Resampling.LANCZOS)
+        scaled_image = original_image.resize((scaled_width, scaled_height), Image.Resampling.LANCZOS)
         scaled_qimage = ImageQt.ImageQt(scaled_image)
         scaled_pixmap = QPixmap.fromImage(scaled_qimage)
 
@@ -305,7 +311,8 @@ class EditOptionsWidget(QWidget):
 
         # Center the scaled image over the blurred background
         x_offset = (PREVIEW_WIDTH - scaled_pixmap.width()) // 2
-        painter.drawPixmap(x_offset, 0, scaled_pixmap)
+        y_offset = (PREVIEW_HEIGHT - scaled_pixmap.height()) // 2
+        painter.drawPixmap(x_offset, y_offset, scaled_pixmap)
 
         # End painting
         painter.end()
