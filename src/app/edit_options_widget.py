@@ -1,13 +1,15 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QFileDialog, QSlider, QLineEdit, QMessageBox
+from PIL import Image, ImageFilter, ImageQt, ImageDraw, ImageFont, ImageGrab
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap, QPainter
-from PIL import Image, ImageFilter, ImageQt, ImageDraw, ImageFont
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QFileDialog, QSlider, \
+    QLineEdit, QMessageBox, QGroupBox
 
 from .get_resources import template_data, espuino_logo, tonuino_logo
 
 # Size the label to be scaled for the editor image canvas
 PREVIEW_HEIGHT = 170
 PREVIEW_WIDTH = 278
+
 
 class EditOptionsWidget(QWidget):
     def __init__(self):
@@ -30,9 +32,19 @@ class EditOptionsWidget(QWidget):
         # Read template configuration
         self.template_config = template_data
 
-        # Image selector
-        self.image_selector_btn = QPushButton("Select Image")
+        self.image_load_group = QGroupBox("Load Image ...")
+        self.image_load_layout = QHBoxLayout()
+
+        # Load image from file
+        self.image_selector_btn = QPushButton("From File")
         self.image_selector_btn.clicked.connect(self.select_image)
+        # Load image from clipboard
+        self.image_load_from_clipboard = QPushButton("From Clipboard")
+        self.image_load_from_clipboard.clicked.connect(self.load_image_from_clipboard)
+
+        self.image_load_layout.addWidget(self.image_selector_btn)
+        self.image_load_layout.addWidget(self.image_load_from_clipboard)
+        self.image_load_group.setLayout(self.image_load_layout)
 
         # Preview for selected image
         self.image_preview = QLabel()
@@ -42,7 +54,7 @@ class EditOptionsWidget(QWidget):
 
         # Layout for image selection and preview with centering
         image_layout = QVBoxLayout()
-        image_layout.addWidget(self.image_selector_btn)
+        image_layout.addWidget(self.image_load_group)
         image_layout.addWidget(self.image_preview, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # Logo selection dropdown
@@ -341,4 +353,30 @@ class EditOptionsWidget(QWidget):
             self.draw_original_image()
             
             if self.__logger__:
-                self.__logger__.log(f"Loaded image {file_name} for label ({row+1},{col+1})")
+                self.__logger__.log(f"Loaded image {file_name} for label ({row + 1},{col + 1})")
+
+    def load_image_from_clipboard(self) -> None:
+        """Load image form clipboard
+        """
+        if self.selected_col is None or self.selected_row is None:
+            QMessageBox.critical(self, "Image Selection Failed", "Please select a label in the preview image first.")
+            self.clear_image()
+            return
+
+        data = ImageGrab.grabclipboard()
+        if data:
+            if isinstance(data, Image.Image):
+                # Load image directly from clipboard
+                row = self.selected_row
+                col = self.selected_col
+
+                self.label_data[(row, col)] = {}
+                self.label_data[(row, col)]['original'] = data
+                self.draw_original_image()
+
+                if self.__logger__:
+                    self.__logger__.log(f"Loaded image from clipboard for label ({row + 1},{col + 1})")
+
+            if isinstance(data, list):
+                raise NotImplementedError(
+                    "Loading single/multiple file pathlist from clipboard is currently not supported")
