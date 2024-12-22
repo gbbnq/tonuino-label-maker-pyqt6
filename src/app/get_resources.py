@@ -14,24 +14,24 @@ def resource_path(relative_path:str):
     return os.path.join(base_path, relative_path)
 
 try:
-    json_path = resource_path('..\\resources\\templates.json')
+    json_path = resource_path('../resources/templates.json')
     with open(json_path, 'r') as file:
         template_data = json.load(file)
 except:
-    json_path = resource_path('resources\\templates.json')
+    json_path = resource_path('resources/templates.json')
     with open(json_path, 'r') as file:
         template_data = json.load(file)
         
 try:
-    espuino_logo_path = resource_path('..\\resources\\espuino_logo.png')
+    espuino_logo_path = resource_path('../resources/espuino_logo.png')
     espuino_logo = Image.open(espuino_logo_path)
 except:
-    espuino_logo_path = resource_path('resources\\espuino_logo.png')
+    espuino_logo_path = resource_path('resources/espuino_logo.png')
     espuino_logo = Image.open(espuino_logo_path)
     
 try:
-    tonuino_logo_path = resource_path('..\\resources\\tonuino_logo.png')
+    tonuino_logo_path = resource_path('../resources/tonuino_logo.png')
     tonuino_logo = Image.open(tonuino_logo_path)
 except:
-    tonuino_logo_path = resource_path('resources\\tonuino_logo.png')
+    tonuino_logo_path = resource_path('resources/tonuino_logo.png')
     tonuino_logo = Image.open(tonuino_logo_path)
