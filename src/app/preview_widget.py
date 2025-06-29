@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsRectItem, QVBoxLayout, QWidget, QGraphicsPixmapItem
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import QRectF
-from PyQt6.QtGui import QPainter, QPixmap, QImage
+from PyQt6.QtGui import QPainter, QPixmap, QImage, QBrush, QColor
 
 import app
 from .get_resources import template_data
@@ -96,6 +96,7 @@ class PreviewWidget(QWidget):
         # Draw A4 paper
         label_rect = QRectF(0, 0, 210 * SCALE_FACTOR, 297 * SCALE_FACTOR)
         label = QGraphicsRectItem(label_rect)
+        label.setBrush(QBrush(QColor(255, 255, 255, 255)))
         self.scene.addItem(label)
                 
         # Set scene view

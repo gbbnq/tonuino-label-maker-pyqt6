@@ -41,6 +41,10 @@ Tonuino Label Maker is a PyQt6 desktop application designed for designing printa
 
 Once installed and built, you can start the application by executing the compiled executable in the **dist** directory. Select the template and the export path. For each free label, click on it in the preview image, select an image from your local drive, define the label settings and apply the label. Finally, export the PDF.
 
+### Linux
+
+You need to install `wl-paste` or `xclip` to use the "From Clipboard" option.
+
 ## Contributing
 
 Contributions are welcome! Please fork the repository and submit pull requests with detailed information on any changes made.

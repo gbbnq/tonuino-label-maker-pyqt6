@@ -1,13 +1,15 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QFileDialog, QSlider, QLineEdit, QMessageBox
+from PIL import Image, ImageFilter, ImageQt, ImageDraw, ImageFont, ImageGrab
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap, QPainter
-from PIL import Image, ImageFilter, ImageQt, ImageDraw, ImageFont
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QFileDialog, QSlider, \
+    QLineEdit, QMessageBox, QGroupBox
 
 from .get_resources import template_data, espuino_logo, tonuino_logo
 
 # Size the label to be scaled for the editor image canvas
 PREVIEW_HEIGHT = 170
 PREVIEW_WIDTH = 278
+
 
 class EditOptionsWidget(QWidget):
     def __init__(self):
@@ -30,9 +32,19 @@ class EditOptionsWidget(QWidget):
         # Read template configuration
         self.template_config = template_data
 
-        # Image selector
-        self.image_selector_btn = QPushButton("Select Image")
+        self.image_load_group = QGroupBox("Load Image ...")
+        self.image_load_layout = QHBoxLayout()
+
+        # Load image from file
+        self.image_selector_btn = QPushButton("From File")
         self.image_selector_btn.clicked.connect(self.select_image)
+        # Load image from clipboard
+        self.image_load_from_clipboard = QPushButton("From Clipboard")
+        self.image_load_from_clipboard.clicked.connect(self.load_image_from_clipboard)
+
+        self.image_load_layout.addWidget(self.image_selector_btn)
+        self.image_load_layout.addWidget(self.image_load_from_clipboard)
+        self.image_load_group.setLayout(self.image_load_layout)
 
         # Preview for selected image
         self.image_preview = QLabel()
@@ -42,13 +54,18 @@ class EditOptionsWidget(QWidget):
 
         # Layout for image selection and preview with centering
         image_layout = QVBoxLayout()
-        image_layout.addWidget(self.image_selector_btn)
+        image_layout.addWidget(self.image_load_group)
         image_layout.addWidget(self.image_preview, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # Logo selection dropdown
         self.logo_selector = QComboBox()
         self.logo_selector.setFixedWidth(350)
         self.logo_selector.addItems(["None", "ESPuino", "Tonuino"])
+
+        # Crop selection dropdown
+        self.crop_selector = QComboBox()
+        self.crop_selector.setFixedWidth(350)
+        self.crop_selector.addItems(["Fit Auto", "Fit Width", "Fit Height", "Stretch"])
 
         # Blur strength slider
         self.blur_slider = QSlider(Qt.Orientation.Horizontal)
@@ -70,7 +87,11 @@ class EditOptionsWidget(QWidget):
         logo_layout = QHBoxLayout()
         logo_layout.addWidget(QLabel("Select Logo:"))
         logo_layout.addWidget(self.logo_selector)
-        
+
+        crop_layout = QHBoxLayout()
+        crop_layout.addWidget(QLabel("Select Crop:"))
+        crop_layout.addWidget(self.crop_selector)
+
         # Horizontal layout for blur
         logo_blur = QHBoxLayout()
         logo_blur.addWidget(QLabel("Blur Strength:"))
@@ -88,6 +109,7 @@ class EditOptionsWidget(QWidget):
         layout.addLayout(image_layout)
         layout.addLayout(text_layout)
         layout.addLayout(logo_layout)
+        layout.addLayout(crop_layout)
         layout.addLayout(logo_blur)
         layout.addLayout(bottom_layout)
         
@@ -132,7 +154,8 @@ class EditOptionsWidget(QWidget):
         blur_strength = self.blur_slider.value()
         logo_setting = self.logo_selector.currentText()
         text_setting = self.text_line.text()
-        
+        crop_setting = self.crop_selector.currentText()
+
         if (row, col) not in self.label_data:
             QMessageBox.critical(self, "Generation Failed", "Please select image for this label first.")
             self.clear_image()
@@ -146,19 +169,34 @@ class EditOptionsWidget(QWidget):
         image_height_inch = self.image_height / 25.4
         target_width_px = int(150 * image_width_inch)
         target_height_px = int(150 * image_height_inch)
-        
-        # Scale original image to the given height with the given DPI
-        scale_factor = target_height_px / original_image.height
-        scaled_width = int(original_image.width * scale_factor)
-        
+
+        # stretch is default
+        scaled_width = target_width_px
+        scaled_height = target_height_px
+
+        if crop_setting == "Fit Auto":
+            if original_image.height / original_image.width > target_height_px / target_width_px:
+                crop_setting = "Fit Height"
+            else:
+                crop_setting = "Fit Width"
+
+        if crop_setting == "Fit Height":
+            # Scale original image to the given height with the given DPI
+            scale_factor = target_height_px / original_image.height
+            scaled_width = int(original_image.width * scale_factor)
+        elif crop_setting == "Fit Width":
+            scale_factor = target_width_px / original_image.width
+            scaled_height = int(original_image.height * scale_factor)
+
         # Ensure the image has an alpha channel if required
         if original_image.mode != "RGBA":
             original_image = original_image.convert("RGBA")
-        
-        original_scaled = original_image.resize((scaled_width, target_height_px), Image.Resampling.LANCZOS)
-        
-        # Create a blurred version of the original image
-        blurred_image = original_image.filter(ImageFilter.GaussianBlur(blur_strength))
+
+        original_scaled = original_image.resize((scaled_width, scaled_height), Image.Resampling.LANCZOS)
+
+        # Create a blurred version of the original image by stretching to target size and gaussian blur
+        blurred_image = original_image.resize((target_width_px, target_height_px), Image.Resampling.LANCZOS)
+        blurred_image = blurred_image.filter(ImageFilter.GaussianBlur(blur_strength))
 
         # Scale the blurred image to match the target width while keeping aspect ratio
         scale_factor_blur = target_width_px / blurred_image.width
@@ -167,15 +205,16 @@ class EditOptionsWidget(QWidget):
         blurred_scaled = blurred_image.resize((target_width_px, blurred_scaled_height), Image.Resampling.LANCZOS)
         
         # Create a new image with the required target dimensions for print
-        final_print_image = Image.new("RGBA", (target_width_px, target_height_px), (255, 255, 255, 0))
-        
+        final_print_image = Image.new("RGBA", (target_width_px, target_height_px), (255, 255, 255, 255))
+
         # Paste the blurred image as the background
         final_print_image.paste(blurred_scaled, (0, 0))
         
         # Center the original scaled image over the blurred background
         x_offset = (target_width_px - scaled_width) // 2
-        final_print_image.paste(original_scaled, (x_offset, 0), original_scaled)
-        
+        y_offset = (target_height_px - scaled_height) // 2
+        final_print_image.paste(original_scaled, (x_offset, y_offset), original_scaled)
+
         # Obtain logo based on logo_setting
         if logo_setting == "ESPuino":
             logo_image = espuino_logo
@@ -275,12 +314,18 @@ class EditOptionsWidget(QWidget):
             original_image = self.label_data[(row, col)]['original']
                        
         # Scale the original image to fit the required height with aspect ratio
-        target_height = PREVIEW_HEIGHT
-        scale_factor = target_height / original_image.height
-        scaled_width = int(original_image.width * scale_factor)
-        
+        target_height = scaled_height = PREVIEW_HEIGHT
+        target_width = scaled_width = PREVIEW_WIDTH
+
+        if original_image.height / original_image.width > target_height / target_width:
+            scale_factor = target_height / original_image.height
+            scaled_width = int(original_image.width * scale_factor)
+        else:
+            scale_factor = target_width / original_image.width
+            scaled_height = int(original_image.height * scale_factor)
+
         # Convert scaled original image to QPixmap
-        scaled_image = original_image.resize((scaled_width, target_height), Image.Resampling.LANCZOS)
+        scaled_image = original_image.resize((scaled_width, scaled_height), Image.Resampling.LANCZOS)
         scaled_qimage = ImageQt.ImageQt(scaled_image)
         scaled_pixmap = QPixmap.fromImage(scaled_qimage)
 
@@ -293,7 +338,8 @@ class EditOptionsWidget(QWidget):
 
         # Center the scaled image over the blurred background
         x_offset = (PREVIEW_WIDTH - scaled_pixmap.width()) // 2
-        painter.drawPixmap(x_offset, 0, scaled_pixmap)
+        y_offset = (PREVIEW_HEIGHT - scaled_pixmap.height()) // 2
+        painter.drawPixmap(x_offset, y_offset, scaled_pixmap)
 
         # End painting
         painter.end()
@@ -341,4 +387,30 @@ class EditOptionsWidget(QWidget):
             self.draw_original_image()
             
             if self.__logger__:
-                self.__logger__.log(f"Loaded image {file_name} for label ({row+1},{col+1})")
+                self.__logger__.log(f"Loaded image {file_name} for label ({row + 1},{col + 1})")
+
+    def load_image_from_clipboard(self) -> None:
+        """Load image form clipboard
+        """
+        if self.selected_col is None or self.selected_row is None:
+            QMessageBox.critical(self, "Image Selection Failed", "Please select a label in the preview image first.")
+            self.clear_image()
+            return
+
+        data = ImageGrab.grabclipboard()
+        if data:
+            if isinstance(data, Image.Image):
+                # Load image directly from clipboard
+                row = self.selected_row
+                col = self.selected_col
+
+                self.label_data[(row, col)] = {}
+                self.label_data[(row, col)]['original'] = data
+                self.draw_original_image()
+
+                if self.__logger__:
+                    self.__logger__.log(f"Loaded image from clipboard for label ({row + 1},{col + 1})")
+
+            if isinstance(data, list):
+                raise NotImplementedError(
+                    "Loading single/multiple file pathlist from clipboard is currently not supported")

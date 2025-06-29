@@ -1,12 +1,12 @@
 {
     "Herma 5028 83.8 mm x 50.8 mm": {
-        "top_margin": 14.85,
-        "left_margin": 19.14,
+        "top_margin": 21.5,
+        "left_margin": 18.64,
         "sticker_pattern": [5, 2],
-        "sticker_width": 83.8,
+        "sticker_width": 83.82,
         "sticker_height": 50.8,
-        "horizontal_margin": 1.5,
-        "vertical_margin": 2.22
+        "horizontal_margin": 5.08,
+        "vertical_margin": 0
     },
     "Herma 4610 52.5 x 29.7 mm":{
         "top_margin": 1,
